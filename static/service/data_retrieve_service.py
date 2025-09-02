@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from static.service.baostock_adapter import get_trade_date
+from static.repo.baostock_adapter import get_trade_date
 from static.utils.dateutils import is_same_year, is_same_month, is_same_week
 
 
@@ -77,5 +77,4 @@ def tag_special_trade_day_with_next_and_last(date_str, next_trade_day, last_trad
 
 
 def get_trade_day_info(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> TradeDayInfo:
-    # todo: 获取交易日信息
     return None

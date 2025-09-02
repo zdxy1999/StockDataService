@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 
-class ApiCallDecorator:
+class BaoStockApiCallDecorator:
     def __init__(self, func):
         self.func = func
         functools.update_wrapper(self, func)
@@ -36,7 +36,7 @@ class ApiCallDecorator:
         return resp.fields, resp.data
 
 
-@ApiCallDecorator
+@BaoStockApiCallDecorator
 def get_trade_date(date_str: str = datetime.now().strftime("%Y-%m-%d"), length: int = 7) -> dict[str,list[str]]:
     """
     获取从 start_date_str 开始/结束 的 length 个交易日，
@@ -63,7 +63,7 @@ def get_trade_date(date_str: str = datetime.now().strftime("%Y-%m-%d"), length: 
     if resp.error_code != '0':
         print('baostock api call error:' + resp.error_msg)
 
-    fields, data = ApiCallDecorator.__getdata__(resp)
+    fields, data = BaoStockApiCallDecorator.__getdata__(resp)
 
     result['next'] = [item[0] for item in data if item[1] == '1'][:length]
 
@@ -71,7 +71,7 @@ def get_trade_date(date_str: str = datetime.now().strftime("%Y-%m-%d"), length: 
     last_end_date = datetime.strptime(date_str, '%Y-%m-%d')
     last_start_date = last_end_date + timedelta(days=-max_length)
     resp = bs.query_trade_dates(start_date=last_start_date, end_date=last_end_date.strftime("%Y-%m-%d"))
-    fields, data = ApiCallDecorator.__getdata__(resp)
+    fields, data = BaoStockApiCallDecorator.__getdata__(resp)
     result['last'] = [item[0] for item in data if item[1] == '1'][-length:]
     return result
 
