@@ -18,4 +18,4 @@ def before_open_daily_info(date_str: str = datetime.now().strftime("%Y-%m-%d")):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=9090)

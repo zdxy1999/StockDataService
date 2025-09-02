@@ -1,12 +1,7 @@
-import functools
 from datetime import datetime, timedelta
-from turtledemo.penrose import start
 
 import pandas as pd
 import tushare as ts
-import akshare as ak
-from numpy.ma.extras import column_stack
-from pandas.io.sas.sas_constants import column_type_length, column_type_offset, column_data_length_length
 
 token = "15bb21f848e2844fee6046746341f03079d4911b96fc80f1a48ee8da"
 
