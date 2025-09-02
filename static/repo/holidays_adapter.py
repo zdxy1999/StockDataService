@@ -32,7 +32,12 @@ def get_upcoming_holiday_info(date_str: str = datetime.now().strftime("%Y-%m-%d"
     holiday_info_list = get_holiday_info_list(date_str[:4])
     return next(filter(lambda x: date_str < x["date"] <= date_after_7_days and x["isOffDay"], holiday_info_list), None)
 
-
+def is_reschedule_working_day(date_str: str) -> bool:
+    """
+    是否是调休工作日
+    """
+    holiday_info = get_holiday_info(date_str)
+    return holiday_info is not None and not holiday_info["isOffDay"]
 
 if __name__ == '__main__':
     print(get_holiday_info("2025-09-27"))

@@ -1,7 +1,11 @@
+import json
 from datetime import datetime
 from enum import Enum
 
 from static.repo.baostock_adapter import get_trade_date
+from static.repo.holidays_adapter import HolidayInfo, get_upcoming_holiday_info, is_reschedule_working_day
+from static.repo.tushare_adapter import DfWithColumnDesc, get_ipo_stocks_of_a_day, get_suspend_stocks_of_a_day, \
+    get_resume_stocks_of_a_day, get_mkt_dc_money_flow, get_ind_money_flow, get_money_flow_hsgt
 from static.utils.dateutils import is_same_year, is_same_month, is_same_week
 
 
@@ -13,18 +17,20 @@ class SpecialTradeDay(Enum):
     YEAR_LAST = 5
     YEAR_FIRST = 6
 
-
 class TradeDayInfo:
     today_str: str
     is_trade_day: bool
+    is_rescheduled_working_day: bool
     last_trade_date: str
     next_trade_date: str
 
     special_trade_day_tag: list[str]
-    upcoming_events: list[str]
+    upcoming_holiday: HolidayInfo
 
+    mkt_data: list[dict]
 
-
+    def __init__(self) -> None:
+        self.mkt_data = []
 
 def is_date_trade_day(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> bool:
     next_trade_day_list = get_trade_date(date_str=date_str, length=1)['next']
@@ -77,4 +83,38 @@ def tag_special_trade_day_with_next_and_last(date_str, next_trade_day, last_trad
 
 
 def get_trade_day_info(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> TradeDayInfo:
-    return None
+    res = TradeDayInfo()
+
+    # 获取交易日信息
+    res.today_str = date_str
+    res.is_trade_day = is_date_trade_day(date_str)
+    res.is_rescheduled_working_day = is_reschedule_working_day(date_str)
+    trade_date_last_next = get_next_and_last_trade_date(date_str)
+    last_trade_day = trade_date_last_next['last']
+    next_trade_day = trade_date_last_next['next']
+    res.last_trade_date, res.next_trade_date = last_trade_day, next_trade_day
+
+    # 获取特殊交易日标签
+    res.special_trade_day_tag = tag_special_trade_day_with_next_and_last(date_str, res.next_trade_date, res.last_trade_date)
+
+    # 获取即将到来的节假日
+    res.upcoming_holiday = get_upcoming_holiday_info(date_str)
+
+    # 市场信息(有可能出现接口调用问题)
+    data = get_ipo_stocks_of_a_day(date_str)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+    data = get_suspend_stocks_of_a_day(date_str)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+    data = get_resume_stocks_of_a_day(date_str)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+    data = get_mkt_dc_money_flow(last_trade_day)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+    data = get_ind_money_flow(last_trade_day)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+    data = get_money_flow_hsgt(last_trade_day)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+
+    return res
+
+if __name__ == '__main__':
+    print(json.dumps(get_trade_day_info("2025-09-02").__dict__, indent=2, ensure_ascii=False))
