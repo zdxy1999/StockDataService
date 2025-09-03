@@ -5,7 +5,8 @@ from enum import Enum
 from static.repo.baostock_adapter import get_trade_date
 from static.repo.holidays_adapter import HolidayInfo, get_upcoming_holiday_info, is_reschedule_working_day
 from static.repo.tushare_adapter import DfWithColumnDesc, get_ipo_stocks_of_a_day, get_suspend_stocks_of_a_day, \
-    get_resume_stocks_of_a_day, get_mkt_dc_money_flow, get_ind_money_flow, get_money_flow_hsgt
+    get_resume_stocks_of_a_day, get_mkt_dc_money_flow, get_ind_money_flow, get_money_flow_hsgt, \
+    get_shibor_in_last_7_day, get_shibor_quota, get_short_news_in_2_days
 from static.utils.dateutils import is_same_year, is_same_month, is_same_week
 
 
@@ -114,6 +115,13 @@ def get_trade_day_info(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> T
     data = get_money_flow_hsgt(last_trade_day)
     res.mkt_data.append(data.get_dict() if data is not None else None)
 
+    data = get_shibor_in_last_7_day(date_str)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+    data = get_shibor_quota(date_str)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
+
+    data = get_short_news_in_2_days(date_str)
+    res.mkt_data.append(data.get_dict() if data is not None else None)
     return res
 
 if __name__ == '__main__':

@@ -21,6 +21,30 @@ class DfWithColumnDesc:
             "desc": self.desc,
             "column_desc": self.column_desc
         }
+
+##================= 缓存相关 =================
+cache = {}
+
+class DataCache:
+    key: str # 缓存的 key, 用于标记一种数据的类型
+    version: str # 用于标记一种数据的版本
+    data: DfWithColumnDesc # 缓存的数据
+
+    def __init__(self, key: str, version: str, data: DfWithColumnDesc):
+        self.key = key
+        self.version = version
+        self.data = data
+
+def get_data_cache(key: str, version: str) -> DfWithColumnDesc | None:
+    if key in cache and cache[key].version == version:
+        print("get data cache: {} {}".format(key, version))
+        return cache[key].data
+    return None
+
+def set_data_cache(key: str, version: str, data: DfWithColumnDesc):
+    cache[key] = DataCache(key, version, data)
+
+
 def adapt_date_str(date_str: str) -> str:
     return date_str.replace("-", "")
 def get_pro():
@@ -56,9 +80,10 @@ def get_ipo_stocks_of_a_day(date_str: str = datetime.now().strftime("%Y%m%d")) -
     """
     获取某一日 ipo 的新股数据
     """
+    date_str = adapt_date_str(date_str)
     pro = get_pro()
     df = pro.new_share(start_date=adapt_date_str(date_str), end_date=adapt_date_str(date_str))
-    desc = "当日ipo新股数据"
+    desc = "{}当日ipo新股数据".format(date_str)
     column_desc = """
     ts_code	str	Y	TS股票代码
     sub_code	str	Y	申购代码
@@ -84,7 +109,7 @@ def get_suspend_stocks_of_a_day(date_str: str = datetime.now().strftime("%Y%m%d"
     date_after_7_days = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=7)).strftime("%Y%m%d")
     pro = get_pro()
     df = pro.suspend_d(suspend_type='S', start_date=date_str, end_date=date_after_7_days)
-    desc = "当日内与往后七日内的停牌股票"
+    desc = "{}当日内与往后七日内的停牌股票".format(date_str)
     column_desc = """
     ts_code	str	Y	TS代码
     trade_date	str	Y	停复牌日期
@@ -100,7 +125,7 @@ def get_resume_stocks_of_a_day(date_str: str = datetime.now().strftime("%Y%m%d")
     date_str = adapt_date_str(date_str)
     pro = get_pro()
     df = pro.suspend_d(suspend_type='R', trade_date=date_str)
-    desc = "当日复牌股票"
+    desc = "{}当日复牌股票".format(date_str)
     column_desc = """
     ts_code	str	Y	TS代码
     trade_date	str	Y	停复牌日期
@@ -119,7 +144,7 @@ def get_money_flow_hsgt(date_str: str = datetime.now().strftime("%Y%m%d")) -> Df
     date_before_7_days = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=-7)).strftime("%Y-%m-%d")
     pro = get_pro()
     df = pro.moneyflow_hsgt(start_date=adapt_date_str(date_before_7_days), end_date=adapt_date_str(date_str))
-    desc = "沪深港通资金流向"
+    desc = "{}沪深港通资金流向".format(date_str)
     column_desc = """
     trade_date	str	交易日期
     ggt_ss	float	港股通（上海）
@@ -132,10 +157,16 @@ def get_money_flow_hsgt(date_str: str = datetime.now().strftime("%Y%m%d")) -> Df
     return DfWithColumnDesc(df,desc, parse_column_desc_to_dict(column_desc))
 
 def get_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")):
+    key = "money_flow"
     date_str = adapt_date_str(date_str)
+
+    data_cache = get_data_cache(key, date_str)
+    if data_cache is not None:
+        return data_cache
+
     pro = get_pro()
     df = pro.moneyflow(trade_date=date_str)
-    desc = "个股资金流向"
+    desc = "{}当日个股资金流向".format(date_str)
     column_desc = """
     ts_code	str	Y	TS代码
     trade_date	str	Y	交易日期
@@ -158,13 +189,21 @@ def get_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")):
     net_mf_vol	int	Y	净流入量（手）
     net_mf_amount	float	Y	净流入额（万元）
     """
-    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+    res = DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+    set_data_cache(key, date_str, res)
+    return res
 
 def get_ind_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWithColumnDesc | None:
     """
     获取某一日的行业资金流向
     """
+    key = "ind_money_flow"
     date_str = adapt_date_str(date_str)
+
+    data_cache = get_data_cache(key, date_str)
+    if data_cache is not None:
+        return data_cache
+
     pro = get_pro()
     df = ''
     try :
@@ -172,7 +211,7 @@ def get_ind_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfW
     except:
         print("get_ind_money_flow error")
         return None
-    desc = "行业资金流向"
+    desc = "{}当日行业资金流向".format(date_str)
     column_desc = """
     trade_date	str	Y	交易日期
     ts_code	str	Y	板块代码
@@ -187,13 +226,22 @@ def get_ind_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfW
     net_sell_amount	float	Y	流出资金(亿元)
     net_amount	float	Y	净额(元)
     """
-    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+    res = DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+    set_data_cache(key, date_str, res)
+    return res
 
 def get_mkt_dc_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWithColumnDesc | None:
     """
     获取某一日 大盘资金流向
     """
+    key = "mkt_dc_money_flow"
     date_str = adapt_date_str(date_str)
+
+    data_cache = get_data_cache(key, date_str)
+    if data_cache is not None:
+        return data_cache
+
+
     pro = get_pro()
     df = ''
     try :
@@ -201,7 +249,7 @@ def get_mkt_dc_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")) -> 
     except:
         print("get_mkt_dc_money_flow error")
         return None
-    desc = "大盘资金流向"
+    desc = "{}当日内大盘资金流向".format(date_str)
     column_desc = """
     trade_date	str	Y	交易日期
     close_sh	float	Y	上证收盘价（点）
@@ -219,8 +267,110 @@ def get_mkt_dc_money_flow(date_str: str = datetime.now().strftime("%Y%m%d")) -> 
     buy_sm_amount	float	Y	今日小单净流入 净额（元）
     buy_sm_amount_rate	float	Y	今日小单净流入 净占比%
     """
+    res = DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+    set_data_cache(key, date_str, res)
+    return res
+
+
+##================== 利率数据 =================
+def get_lpr_in_last_7_day(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWithColumnDesc:
+    """
+    七日内lpr利率
+    """
+    date_str = adapt_date_str(date_str)
+    date_before_7_days = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-7)).strftime("%Y%m%d")
+    pro = get_pro()
+    df = pro.shibor_lpr(start_date=date_before_7_days, end_date=date_str)
+    desc = " 以 {} 为开始日期，以 {} 为结束日期的LPR 利率数据".format(date_before_7_days, date_str)
+    column_desc = """
+    date	str	Y	日期
+    1y	float	Y	1年贷款利率
+    5y	float	Y	5年贷款利率
+    """
     return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
+def get_shibor_in_last_7_day(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWithColumnDesc:
+    date_str = adapt_date_str(date_str)
+    date_before_7_days = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-7)).strftime("%Y%m%d")
+    pro = get_pro()
+    df = pro.shibor(start_date=date_before_7_days, end_date=date_str)
+    desc = " 以 {} 为开始日期，以 {} 为结束日期的SHIBOR 利率数据".format(date_before_7_days, date_str)
+    column_desc = """
+    date	str	Y	日期
+    on	float	Y	隔夜
+    1w	float	Y	1周
+    2w	float	Y	2周
+    1m	float	Y	1个月
+    3m	float	Y	3个月
+    6m	float	Y	6个月
+    9m	float	Y	9个月
+    1y	float	Y	1年
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+def get_shibor_quota(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWithColumnDesc:
+    date_str = adapt_date_str(date_str)
+    pro = get_pro()
+    df = pro.shibor_quote(start_date=date_str, end_date=date_str)
+    desc = "{}当日的shibor报价数据".format(date_str)
+    column_desc = """
+    date	str	Y	日期
+    bank	str	Y	报价银行
+    on_b	float	Y	隔夜_Bid
+    on_a	float	Y	隔夜_Ask
+    1w_b	float	Y	1周_Bid
+    1w_a	float	Y	1周_Ask
+    2w_b	float	Y	2周_Bid
+    2w_a	float	Y	2周_Ask
+    1m_b	float	Y	1月_Bid
+    1m_a	float	Y	1月_Ask
+    3m_b	float	Y	3月_Bid
+    3m_a	float	Y	3月_Ask
+    6m_b	float	Y	6月_Bid
+    6m_a	float	Y	6月_Ask
+    9m_b	float	Y	9月_Bid
+    9m_a	float	Y	9月_Ask
+    1y_b	float	Y	1年_Bid
+    1y_a	float	Y	1年_Ask
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+##================== 新闻数据 =================
+
+
+def get_short_news_in_2_days(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> DfWithColumnDesc:
+    pro = get_pro()
+    yesterday = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=-1)).strftime("%Y-%m-%d")
+    df = pro.news(start_date='{} 09:00:00'.format(yesterday), end_date='{} 09:10:00')
+    desc = "{} 09:00:00 当日的新闻数据,新闻渠道包含：新浪财经、华尔街见闻、同花顺、东方财富、云财经、凤凰新闻、金融界、财联社、第一财经".format(date_str)
+    column_desc = """
+    datetime	str	Y	新闻时间
+    content	str	Y	内容
+    title	str	Y	标题
+    channels	str	N	分类
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+def get_cctv_news(date_str: str = datetime.now().strftime("%Y%m%d"), require_yesterday: bool = False) -> DfWithColumnDesc:
+    key = "cctv_news"
+
+    data_cache = get_data_cache(key, date_str)
+    if data_cache is not None:
+        return data_cache
+
+    pro = get_pro()
+    if require_yesterday:
+        date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-1)).strftime("%Y%m%d")
+
+    df = pro.cctv_news(date=date_str)
+    desc = "{} 当日的新闻联播数据".format(date_str)
+    column_desc = """
+    date	str	Y	日期
+    title	str	Y	标题
+    content	str	Y	内容
+    """
+
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
 ##================== 宏观数据（非日频） =================
 def get_cpi_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWithColumnDesc:
@@ -229,7 +379,7 @@ def get_cpi_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWit
     """
     pro = get_pro()
     df = pro.cn_cpi(start_m=year_str+"01", end_m=year_str+"12")
-    desc = "年内 cpi 数据"
+    desc = "{} 年内 cpi 数据".format(year_str)
     column_desc = """
     month	str	Y	月份YYYYMM
     nt_val	float	Y	全国当月值
@@ -254,7 +404,7 @@ def get_ppi_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWit
     """
     pro = get_pro()
     df = pro.cn_ppi(start_m=year_str+"01", end_m=year_str+"12")
-    desc = "年内 ppi 数据"
+    desc = "{}年内 ppi 数据".format(year_str)
     column_desc = """
     month	str	Y	月份YYYYMM
     ppi_yoy	float	Y	PPI：全部工业品：当月同比
@@ -289,7 +439,7 @@ def get_ppi_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWit
     ppi_cg_dcg_accu	float	Y	PPI：生活资料：耐用消费品类：累计同比
     """
 
-    return DfWithColumnDesc(df, column_desc)
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
 def get_pmi_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWithColumnDesc:
     """
@@ -297,7 +447,7 @@ def get_pmi_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWit
     """
     pro = get_pro()
     df = pro.cn_pmi(start_m=year_str+"01", end_m=year_str+"12")
-    desc = "年内 pmi 数据"
+    desc = "{}年内 pmi 数据".format(year_str)
     column_desc = """
     month	str	N	月份YYYYMM
     pmi010000	float	N	制造业PMI
@@ -368,7 +518,7 @@ def get_sf_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWith
     """
     pro = get_pro()
     df = pro.sf_month(start_m=year_str+"01", end_m=year_str+"12")
-    desc = "年内 社融 数据"
+    desc = "{} 年内社融数据".format(year_str)
     column_desc = """
     month	str	Y	月度
     inc_month	float	Y	社融增量当月值（亿元）
@@ -377,17 +527,77 @@ def get_sf_in_this_year(year_str: str = datetime.now().strftime("%Y")) -> DfWith
     """
     return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
+def get_currency_supply(year_str: str = datetime.now().strftime("%Y")) -> DfWithColumnDesc:
+    """
+    获取年内的货币供应
+    """
+    desc = "{}年内货币供应".format(year_str)
+    pro = get_pro()
+    df = pro.cn_m(start_m=year_str+'01', end_m=year_str+'12')
+    column_desc = """
+    month	str	Y	月份YYYYMM
+    m0	float	Y	M0（亿元）
+    m0_yoy	float	Y	M0同比（%）
+    m0_mom	float	Y	M0环比（%）
+    m1	float	Y	M1（亿元）
+    m1_yoy	float	Y	M1同比（%）
+    m1_mom	float	Y	M1环比（%）
+    m2	float	Y	M2（亿元）
+    m2_yoy	float	Y	M2同比（%）
+    m2_mom	float	Y	M2环比（%）
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+
 
 
 
 if __name__ == '__main__':
 
-    # 新股发售数据
+    # ----------- 特殊个股信息 -----------------------
     # df = get_ipo_stocks_of_a_day("2025-09-11")
     # print(df.df)
 
+    # df = get_suspend_stocks_of_a_day("20250902")
+    # print(df.df)
 
-    # 宏观数据
+    # df = get_resume_stocks_of_a_day("20250902")
+    # print(df.df)
+
+    # ----------- 资金流向数据 -----------------------
+    # df = get_money_flow_hsgt("2024-09-11")
+    # print(df.df)
+
+    # df = get_money_flow("20250901")
+    # print(df.df)
+
+    # df = get_ind_money_flow("20250902")
+    # print(df.df)
+
+    # df = get_mkt_dc_money_flow("20250902")
+    # print(df.df)
+
+    # ----------- 利率信息 -----------------------
+    # df = get_lpr_in_last_7_day("20240903")
+    # print(df.df)
+    #
+    # df = get_shibor_in_last_7_day("20240903")
+    # print(df.df)
+
+    # df = get_shibor_quota("20240903")
+    # print(df.df)
+
+    # ----------- 实时新闻 -----------------------
+    # df = get_short_news_in_2_days("2024-09-03")
+    # print(df.df)
+
+    # df = get_cctv_news("20240903")
+    # print(df.df)
+
+
+
+    # ----------- 宏观数据 ----------------------
     # df = get_cpi_in_this_year("2025")
     # print(df.df)
 
@@ -401,25 +611,9 @@ if __name__ == '__main__':
     # print(df.df)
 
 
-    # 资金流向数据
-    # df = get_money_flow_hsgt("2024-09-11")
-    # print(df.df)
 
-    # df = get_money_flow("20250901")
-    # print(df.df)
 
-    # df = get_ind_money_flow("20250902")
-    # print(df.df)
 
-    # df = get_mkt_dc_money_flow("20250902")
-    # print(df.df)
-
-    # df = get_suspend_stocks_of_a_day("20250902")
-    # print(df.df)
-
-    df = get_resume_stocks_of_a_day("20250902")
-    print(df.df)
-
-    print(1)
+    print("")
 
 
