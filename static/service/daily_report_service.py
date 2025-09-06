@@ -117,8 +117,6 @@ def get_trade_day_info(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> T
 
     data = get_shibor_in_last_7_day(date_str)
     res.mkt_data.append(data.get_dict() if data is not None else None)
-    data = get_shibor_quota(date_str)
-    res.mkt_data.append(data.get_dict() if data is not None else None)
 
     data = get_short_news_in_2_days(date_str)
     res.mkt_data.append(data.get_dict() if data is not None else None)
