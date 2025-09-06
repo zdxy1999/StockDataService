@@ -362,7 +362,7 @@ def get_shibor_quota(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWit
 def get_short_news_in_2_days(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> DfWithColumnDesc:
     pro = get_pro()
     yesterday = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=-1)).strftime("%Y-%m-%d")
-    df = pro.news(src='sina', start_date='{} 21:00:00'.format(yesterday), end_date='{} 09:10:00'.format(date_str))
+    df = pro.news(src='sina', start_date='{} 19:00:00'.format(yesterday), end_date='{} 09:00:00'.format(date_str))
     desc = "{} 09:00:00 当日的新闻数据,新闻渠道包含：新浪财经".format(date_str)
     column_desc = """
     datetime	str	Y	新闻时间
@@ -374,7 +374,7 @@ def get_short_news_in_2_days(date_str: str = datetime.now().strftime("%Y-%m-%d")
 
 
 def get_cctv_news(date_str: str = datetime.now().strftime("%Y%m%d"),
-                  require_yesterday: bool = False) -> DfWithColumnDesc:
+                  require_yesterday: bool = False) -> DfWithColumnDesc | None:
     key = "cctv_news"
 
     data_cache = get_data_cache(key, date_str)
@@ -385,7 +385,6 @@ def get_cctv_news(date_str: str = datetime.now().strftime("%Y%m%d"),
     if require_yesterday:
         date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-1)).strftime("%Y%m%d")
 
-    df = pro.cctv_news(date=date_str)
     desc = "{} 当日的新闻联播数据".format(date_str)
     column_desc = """
     date	str	Y	日期
@@ -393,6 +392,40 @@ def get_cctv_news(date_str: str = datetime.now().strftime("%Y%m%d"),
     content	str	Y	内容
     """
 
+    try:
+        df = pro.cctv_news(date=date_str)
+    except:
+        return None
+
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+##================= 国际信息 =====================
+def get_fx_in_last_7_days(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWithColumnDesc:
+    date_str = adapt_date_str(date_str)
+    key = "fx_in_last_7_days"
+    data_cache = get_data_cache(key, date_str)
+    if data_cache is not None:
+        return data_cache
+
+    pro = get_pro()
+    start_date = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-7)).strftime("%Y%m%d")
+    df = pro.fx_daily(ts_code='USDCNH.FXCM', start_date=start_date, end_date=date_str)
+    desc = "{} 七日内美元兑人民币汇率".format(date_str)
+    column_desc = """
+    ts_code	str	Y	外汇代码
+    trade_date	str	Y	交易日期
+    bid_open	float	Y	买入开盘价
+    bid_close	float	Y	买入收盘价
+    bid_high	float	Y	买入最高价
+    bid_low	float	Y	买入最低价
+    ask_open	float	Y	卖出开盘价
+    ask_close	float	Y	卖出收盘价
+    ask_high	float	Y	卖出最高价
+    ask_low	float	Y	卖出最低价
+    tick_qty	int	Y	报价笔数
+    exchange	str	N	交易商
+    """
     return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
 
@@ -629,6 +662,10 @@ if __name__ == '__main__':
     # print(df.df)
 
     # df = get_sf_in_this_year("2025")
+    # print(df.df)
+
+    # ----------- 国际数据 ----------------------
+    # df = get_fx_in_last_7_days("20250906")
     # print(df.df)
 
     print("")
