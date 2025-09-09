@@ -1,3 +1,4 @@
+from dataclasses import fields
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -362,13 +363,10 @@ def get_shibor_quota(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWit
 def get_short_news_in_2_days(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> DfWithColumnDesc:
     pro = get_pro()
     yesterday = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=-1)).strftime("%Y-%m-%d")
-    df = pro.news(src='sina', start_date='{} 19:00:00'.format(yesterday), end_date='{} 09:00:00'.format(date_str))
+    df = pro.news(src='sina', start_date='{} 20:00:00'.format(yesterday), end_date='{} 09:00:00'.format(date_str), fields='content')
     desc = "{} 09:00:00 当日的新闻数据,新闻渠道包含：新浪财经".format(date_str)
     column_desc = """
-    datetime	str	Y	新闻时间
     content	str	Y	内容
-    title	str	Y	标题
-    channels	str	N	分类
     """
     return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
