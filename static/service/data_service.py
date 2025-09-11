@@ -189,4 +189,4 @@ def get_global_data_for_today(date_str: str) -> DataObj:
 
 
 if __name__ == '__main__':
-    print(json.dumps(get_trade_day_info("2025-09-02").__dict__, indent=2, ensure_ascii=False))
+    print(json.dumps(get_special_stocks_of_a_day("2025-09-11").__dict__, indent=2, ensure_ascii=False))
