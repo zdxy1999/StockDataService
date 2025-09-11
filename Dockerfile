@@ -21,4 +21,4 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 
 # 启动 Flask 应用
-CMD ["python", "app.py"]
+CMD ["./start_servers.sh"]

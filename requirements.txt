@@ -4,3 +4,4 @@ pandas~=2.3.2
 tushare~=1.4.24
 akshare~=1.17.44
 requests~=2.32.5
+mcp~=1.13.1

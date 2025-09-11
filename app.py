@@ -6,9 +6,9 @@ from flask import Flask, request
 
 from static.service.data_service import get_trade_day_info, get_special_stocks_of_a_day, get_last_trade_day_money_flow, \
     get_shibor_in_last_7_days, get_news_for_today, get_global_data_for_today
+from static.service.evaluation_service import get_all_main_index_pe_pb_position
 
 app = Flask(__name__)
-
 
 @app.route('/')
 def hello_world():  # put application's code here
@@ -37,6 +37,11 @@ def get_date_related_data(handler_func):
 @app.route('/tradeDayBasic')
 @get_date_related_data
 def trade_day_basic_info(date_str):
+    """获取某一天的交易日基本信息（包含是否是交易日、上一个、下一个交易日）等
+
+    Args:
+        date_str: 以 YYYY-MM-DD 格式表示的日期字符串
+    """
     return get_trade_day_info(date_str)
 
 
@@ -68,6 +73,11 @@ def get_news_data(date_str):
 @get_date_related_data
 def get_global_data(date_str):
     return get_global_data_for_today(date_str)
+
+
+@app.route('/mainIndexPosition')
+def get_main_index_pe_pb_position():
+    return get_all_main_index_pe_pb_position()
 
 
 if __name__ == '__main__':

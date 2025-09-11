@@ -607,6 +607,13 @@ def get_currency_supply(year_str: str = datetime.now().strftime("%Y")) -> DfWith
     """
     return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
+
+
+##================== 指数数据 =================
+def get_index_info():
+    pro = get_pro()
+    df = pro.index_daily(ts_code='399300.SZ', start_date='20180101', end_date='20180102')
+
 def get_main_index_pe_from_beginning(code: str):
     pro = get_pro()
     df = pro.index_dailybasic(ts_code=code, fields='ts_code,trade_date,pe')
@@ -616,6 +623,8 @@ def get_main_index_pb_from_beginning(code: str):
     pro = get_pro()
     df = pro.index_dailybasic(ts_code=code, fields='ts_code,trade_date,pb')
     return df
+
+
 
 
 if __name__ == '__main__':
@@ -675,8 +684,5 @@ if __name__ == '__main__':
     # ----------- 国际数据 ----------------------
     # df = get_fx_in_last_7_days("20250906")
     # print(df.df)
-
-    df = get_main_index_pe_from_beginning('000300.SH')
-    print(df)
 
     print("")

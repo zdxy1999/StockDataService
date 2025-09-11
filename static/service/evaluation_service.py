@@ -10,10 +10,11 @@ def get_main_index_pb_position(code:str):
     return cal_percentile(df, 'pb')
 
 def get_all_main_index_pe_pb_position():
-    codes = ['000001.SH','000300.SH','000905.SH','399001.SZ','399005.SZ','399006.SZ','399016.SZ','399300.SZ']
-    names = ['上证指数','沪深300指数','中证500指数','深证成指','中小100指数','创业板指数','深证创新指数','沪深300指数（深圳证券交易所）']
+    codes = ['000001.SH','000300.SH','000905.SH','399001.SZ','399005.SZ','399006.SZ','399016.SZ']
+    names = ['上证指数','沪深300指数','中证500指数','深证成指','中小100指数','创业板指数','深证创新指数']
     positions = []
     for i in range(len(codes)):
+        print('processing {} {} position data'.format(codes[i], names[i]))
         positions.append({
             'code': codes[i],
             'name': names[i],

@@ -167,8 +167,8 @@ def get_last_trade_day_money_flow(date_str: str = datetime.now().strftime("%Y-%m
     return DataObj(res)
 
 
-def get_shibor_in_last_7_days(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> dict:
-    return get_shibor_in_last_7_day(date_str).get_dict()
+def get_shibor_in_last_7_days(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> DataObj:
+    return DataObj(get_shibor_in_last_7_day(date_str).get_dict())
 
 
 def get_news_for_today(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> DataObj:
