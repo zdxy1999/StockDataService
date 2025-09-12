@@ -65,17 +65,31 @@ def parse_column_desc_to_dict(input_string) -> list[dict]:
     # 分割字符串为行
     lines = input_string.strip().split('\n')
 
-    # 使用列表推导式处理每一行
-    result = [
-        {
-            "字段名称": parts[0],
-            "字段类型": parts[1],
-            "是否默认显示": parts[2],
-            "字段描述": ' '.join(parts[3:])
-        }
-        for line in lines
-        if (parts := line.split()) and len(parts) >= 4
-    ]
+    part_number = len(lines[0].split())
+
+    if part_number == 4:
+        result = [
+            {
+                "字段名称": parts[0],
+                "字段类型": parts[1],
+                "是否默认显示": parts[2],
+                "字段描述": ' '.join(parts[3:])
+            }
+            for line in lines
+            if (parts := line.split()) and len(parts) == 4
+        ]
+    elif part_number == 3:
+        result = [
+            {
+                "字段名称": parts[0],
+                "字段类型": parts[1],
+                "字段描述": ' '.join(parts[2:])
+            }
+            for line in lines
+            if (parts := line.split()) and len(parts) == 3
+        ]
+    else:
+        raise Exception("column desc number error")
 
     return result
 
@@ -363,7 +377,8 @@ def get_shibor_quota(date_str: str = datetime.now().strftime("%Y%m%d")) -> DfWit
 def get_short_news_in_2_days(date_str: str = datetime.now().strftime("%Y-%m-%d")) -> DfWithColumnDesc:
     pro = get_pro()
     yesterday = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=-1)).strftime("%Y-%m-%d")
-    df = pro.news(src='sina', start_date='{} 20:00:00'.format(yesterday), end_date='{} 09:00:00'.format(date_str), fields='content')
+    df = pro.news(src='sina', start_date='{} 20:00:00'.format(yesterday), end_date='{} 09:00:00'.format(date_str),
+                  fields='content')
     desc = "{} 09:00:00 当日的新闻数据,新闻渠道包含：新浪财经".format(date_str)
     column_desc = """
     content	str	Y	内容
@@ -608,22 +623,179 @@ def get_currency_supply(year_str: str = datetime.now().strftime("%Y")) -> DfWith
     return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
 
 
-
 ##================== 指数数据 =================
 def get_index_info():
     pro = get_pro()
     df = pro.index_daily(ts_code='399300.SZ', start_date='20180101', end_date='20180102')
+
 
 def get_main_index_pe_from_beginning(code: str):
     pro = get_pro()
     df = pro.index_dailybasic(ts_code=code, fields='ts_code,trade_date,pe')
     return df
 
+
 def get_main_index_pb_from_beginning(code: str):
     pro = get_pro()
     df = pro.index_dailybasic(ts_code=code, fields='ts_code,trade_date,pb')
     return df
 
+
+def get_index_daily_info(date_str: str, code: str):
+    date_str = adapt_date_str(date_str)
+    pro = get_pro()
+    df = pro.index_basic(ts_code=code, fields='name,fullname')
+    name = df['name'].values[0]
+    fullname = df['fullname'].values[0]
+    df = pro.index_daily(ts_code=code, trade_date=date_str)
+    desc = '{} {}({}) 指数于 {} 交易日的行情'.format(code, name, fullname, date_str)
+    column_desc = """
+    ts_code	str	Y TS指数代码
+    trade_date	str	Y 交易日
+    close	float	Y 收盘点位
+    open	float	Y 开盘点位
+    high	float	Y 最高点位
+    low	float	Y 最低点位
+    pre_close	float	Y 昨日收盘点
+    change	float	Y 涨跌点
+    pct_chg	float	Y 涨跌幅（%）
+    vol	float	Y 成交量（手）
+    amount	float	Y 成交额（千元）
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+# 个股信息
+def get_all_stocks_name_and_code():
+    pro = get_pro()
+    df = pro.stock_basic(fields='ts_code,name')
+    records = df[['ts_code', 'name']].to_dict('records')
+
+    # 将每个字典拼接成一行字符串
+    result_str = '\n'.join([f"{item['ts_code']} {item['name']}" for item in records])
+    return result_str
+
+
+def get_stock_basic_info(ts_code: str) -> DfWithColumnDesc:
+    pro = get_pro()
+    df = pro.stock_basic(ts_code=ts_code)
+    name = df['name'][0]
+    desc = '{} {} 股票的基本信息'.format(ts_code, name)
+    column_desc = """
+    ts_code	str	Y	TS代码
+    symbol	str	Y	股票代码
+    name	str	Y	股票名称
+    area	str	Y	地域
+    industry	str	Y	所属行业
+    fullname	str	N	股票全称
+    enname	str	N	英文全称
+    cnspell	str	Y	拼音缩写
+    market	str	Y	市场类型（主板/创业板/科创板/CDR）
+    exchange	str	N	交易所代码
+    curr_type	str	N	交易货币
+    list_status	str	N	上市状态 L上市 D退市 P暂停上市
+    list_date	str	Y	上市日期
+    delist_date	str	N	退市日期
+    is_hs	str	N	是否沪深港通标的，N否 H沪股通 S深股通
+    act_name	str	Y	实控人名称
+    act_ent_type	str	Y	实控人企业性质
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+def get_stock_basic_index_in_30_days(date_str: str, ts_code: str):
+    date_str = adapt_date_str(date_str)
+    pro = get_pro()
+    start_date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-30)).strftime("%Y%m%d")
+    df = pro.daily_basic(start_date=start_date_str, end_date=date_str, ts_code=ts_code)
+    desc = '{} 股票前七日基本交易指标'.format(ts_code)
+    column_desc = """
+    ts_code	str	TS股票代码
+    trade_date	str	交易日期
+    close	float	当日收盘价
+    turnover_rate	float	换手率（%）
+    turnover_rate_f	float	换手率（自由流通股）
+    volume_ratio	float	量比
+    pe	float	市盈率（总市值/净利润， 亏损的PE为空）
+    pe_ttm	float	市盈率（TTM，亏损的PE为空）
+    pb	float	市净率（总市值/净资产）
+    ps	float	市销率
+    ps_ttm	float	市销率（TTM）
+    dv_ratio	float	股息率 （%）
+    dv_ttm	float	股息率（TTM）（%）
+    total_share	float	总股本 （万股）
+    float_share	float	流通股本 （万股）
+    free_share	float	自由流通股本 （万）
+    total_mv	float	总市值 （万元）
+    circ_mv	float	流通市值（万元）
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+def get_stock_daily_trade_data_in_7days(date_str: str, ts_code: str):
+    date_str = adapt_date_str(date_str)
+    pro = get_pro()
+    start_date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-7)).strftime("%Y%m%d")
+    df = pro.daily(start_date=start_date_str, end_date=date_str, ts_code=ts_code)
+    desc = '{} 股票前七日盘内交易信息'.format(ts_code)
+    column_desc = """
+    ts_code	str	股票代码
+    trade_date	str	交易日期
+    open	float	开盘价
+    high	float	最高价
+    low	float	最低价
+    close	float	收盘价
+    pre_close	float	昨收价【除权价，前复权】
+    change	float	涨跌额
+    pct_chg	float	涨跌幅 【基于除权后的昨收计算的涨跌幅：（今收-除权昨收）/除权昨收 】
+    vol	float	成交量 （手）
+    amount	float	成交额 （千元）
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+def get_share_float_in_30_days(date_str: str, ts_code: str):
+    date_str = adapt_date_str(date_str)
+    pro = get_pro()
+    end_date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=30)).strftime("%Y%m%d")
+    df = pro.daily(start_date=date_str, end_date=end_date_str, ts_code=ts_code)
+    desc = '{} 30天内限售股解禁信息'.format(ts_code)
+    column_desc = """
+    ts_code	str	Y	TS代码
+    ann_date	str	Y	公告日期
+    float_date	str	Y	解禁日期
+    float_share	float	Y	流通股份(股)
+    float_ratio	float	Y	流通股份占总股本比率
+    holder_name	str	Y	股东名称
+    share_type	str	Y	股份类型
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+
+def get_repurchase_data_in_last_and_after_1_year(date_str: str, ts_code: str):
+    date_str = adapt_date_str(date_str)
+    pro = get_pro()
+    start_date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=-365)).strftime("%Y%m%d")
+    end_date_str = (datetime.strptime(date_str, "%Y%m%d") + timedelta(days=365)).strftime("%Y%m%d")
+    df = pro.daily(start_date=start_date_str, end_date=end_date_str, ts_code=ts_code)
+    desc = '{} 前后一年回购信息'.format(ts_code)
+    column_desc = """
+    ts_code	str	Y	TS代码
+    ann_date	str	Y	公告日期
+    end_date	str	Y	截止日期
+    proc	str	Y	进度
+    exp_date	str	Y	过期日期
+    vol	float	Y	回购数量
+    amount	float	Y	回购金额
+    high_limit	float	Y	回购最高价
+    low_limit	float	Y	回购最低价
+    """
+    return DfWithColumnDesc(df, desc, parse_column_desc_to_dict(column_desc))
+
+def get_stock_all_pe_pb(ts_code: str):
+    pro = get_pro()
+    df = pro.daily_basic(ts_code=ts_code, fields='trade_date,pe,pb')
+    return df
 
 
 
@@ -684,5 +856,29 @@ if __name__ == '__main__':
     # ----------- 国际数据 ----------------------
     # df = get_fx_in_last_7_days("20250906")
     # print(df.df)
+
+    # 指数相关
+    # df = get_index_daily_info('20250912', '000001.SH')
+    # print(df.df)
+
+    # 个股相关
+
+    print(get_all_stocks_name_and_code())
+    # df = get_stock_basic_info('000001.SZ')
+    # print(df.df)
+
+    # df = get_stock_basic_index_in_7_days('2025-09-12', '000001.SZ')
+    # print(df.df)
+    # print(df.column_desc)
+
+    # df = get_stock_daily_trade_data_in_7days('2025-09-12', '000001.SZ')
+    # print(df.df)
+    # print(df.column_desc)
+
+    # df = get_repurchase_data_in_last_and_after_1_year('2025-09-12', '000002.SZ')
+    # print(df.df)
+    # print(df.column_desc)
+
+    # print(get_stock_all_pe_pb('000002.SZ'))
 
     print("")

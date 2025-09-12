@@ -3,10 +3,12 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from static.service.data_service import get_trade_day_info, get_special_stocks_of_a_day, get_last_trade_day_money_flow, \
-    get_shibor_in_last_7_days, get_news_for_today, get_global_data_for_today
+    get_shibor_in_last_7_days, get_news_for_today, get_global_data_for_today, get_main_index_info_for_last_day, \
+    get_main_index_info_for_today
 from mcp.server.fastmcp import FastMCP
 
 from static.service.evaluation_service import get_all_main_index_pe_pb_position
+from static.service.single_stock_service import get_stock_real_time_info, list_all_stock
 
 mcp = FastMCP("stock-data", port=7070, host='0.0.0.0')
 
@@ -97,14 +99,55 @@ def get_global_data(date_str):
     """
     return get_global_data_for_today(date_str)
 
+
 @mcp.tool()
 def get_main_index_pe_pb_position():
     """获得大盘主要指数的pe（市盈率）、pb（市净率）百分位点 (2004年以来)
-    包含八个指数：
+    包含七个指数：
     codes = ['000001.SH','000300.SH','000905.SH','399001.SZ','399005.SZ','399006.SZ','399016.SZ]
     names = ['上证指数','沪深300指数','中证500指数','深证成指','中小100指数','创业板指数','深证创新指数']
     """
     return get_all_main_index_pe_pb_position()
+
+
+@mcp.tool()
+def get_main_index_info_of_last_day(date_str: str):
+    """获取上一个交易日的主要指数交易信息
+    codes = ['000001.SH','000300.SH','000905.SH','399001.SZ','399005.SZ','399006.SZ','399016.SZ]
+    names = ['上证指数','沪深300指数','中证500指数','深证成指','中小100指数','创业板指数','深证创新指数']
+    Args:
+        date_str: 以 YYYY-MM-DD 格式表示的今天日期字符串
+    """
+    return get_main_index_info_for_last_day(date_str)
+
+
+@mcp.tool()
+def get_main_index_info_of_today(date_str: str):
+    """获取今天的主要指数交易信息，如果数据为空则今日不是交易日
+    codes = ['000001.SH','000300.SH','000905.SH','399001.SZ','399005.SZ','399006.SZ','399016.SZ]
+    names = ['上证指数','沪深300指数','中证500指数','深证成指','中小100指数','创业板指数','深证创新指数']
+    Args:
+        date_str: 以 YYYY-MM-DD 格式表示的今天日期字符串
+    """
+    return get_main_index_info_for_today(date_str)
+
+
+@mcp.tool()
+def get_all_stock_name_and_code():
+    """获取所有的个股、基金、指数的 代码与名称
+    """
+    return list_all_stock()
+
+
+@mcp.tool()
+def get_stock_info(date_str: str, code: str):
+    """以 date_str 为时间基准获取 代码为 code 的个股基本信息、行情等信息
+
+    Args:
+        date_str: 以 YYYY-MM-DD 格式表示的今天日期字符串
+        code: 对应的个股代码(ts_code)
+    """
+    return get_stock_real_time_info(date_str, code)
 
 
 if __name__ == '__main__':

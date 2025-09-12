@@ -1,4 +1,6 @@
 import json
+import concurrent.futures
+
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -7,7 +9,8 @@ from static.repo.baostock_adapter import get_trade_date
 from static.repo.holidays_adapter import HolidayInfo, get_upcoming_holiday_info, is_reschedule_working_day
 from static.repo.tushare_adapter import DfWithColumnDesc, get_ipo_stocks_of_a_day, get_suspend_stocks_of_a_day, \
     get_resume_stocks_of_a_day, get_mkt_dc_money_flow, get_ind_money_flow, get_money_flow_hsgt, \
-    get_shibor_in_last_7_day, get_shibor_quota, get_short_news_in_2_days, get_cctv_news, get_fx_in_last_7_days
+    get_shibor_in_last_7_day, get_shibor_quota, get_short_news_in_2_days, get_cctv_news, get_fx_in_last_7_days, \
+    get_index_daily_info
 from static.utils.dateutils import is_same_year, is_same_month, is_same_week
 
 
@@ -188,5 +191,50 @@ def get_global_data_for_today(date_str: str) -> DataObj:
     return DataObj(res)
 
 
+def get_main_index_info_of_a_day(date_str: str) -> DataObj:
+    if is_date_trade_day(date_str) is False:
+        return DataObj("date {} is not trade day".format(date_str))
+
+    codes = ['000001.SH', '000300.SH', '000905.SH', '399001.SZ', '399005.SZ', '399006.SZ', '399016.SZ']
+    names = ['上证指数', '沪深300指数', '中证500指数', '深证成指', '中小100指数', '创业板指数', '深证创新指数']
+    result = []
+
+    def process_single_index(code, name):
+        print(f'getting data for {code} {name}')
+        info = get_index_daily_info(date_str, code).get_dict()
+        return {
+            'code': code,
+            'name': name,
+            'info': info
+        }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_index = {
+            executor.submit(process_single_index, code, name): (code, name)
+            for code, name in zip(codes, names)
+        }
+
+        for future in concurrent.futures.as_completed(future_to_index):
+            try:
+                index_data = future.result()
+                result.append(index_data)
+            except Exception as e:
+                code, name = future_to_index[future]
+                print(f'Error getting data for {code} {name}: {e}')
+
+    return DataObj(result)
+
+
+def get_main_index_info_for_last_day(date_str: str) -> DataObj:
+    last_trade_day = get_last_trade_day(date_str)
+    return get_main_index_info_of_a_day(last_trade_day)
+
+
+def get_main_index_info_for_today(date_str: str) -> DataObj:
+    return get_main_index_info_of_a_day(date_str)
+
+
+
+
 if __name__ == '__main__':
-    print(json.dumps(get_special_stocks_of_a_day("2025-09-11").__dict__, indent=2, ensure_ascii=False))
+    print(json.dumps(get_main_index_info_for_last_day("2025-09-13").__dict__, indent=2, ensure_ascii=False))
