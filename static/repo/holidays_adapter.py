@@ -14,7 +14,7 @@ def get_holiday_info_list(year:str) -> list[HolidayInfo]:
     if year in holiday_info_list_cache:
         return holiday_info_list_cache
 
-    url = "https://holiday.cyi.me/api/holidays?year={}".format(year)
+    url = "https://api.jiejiariapi.com/v1/holidays/{}".format(year)
     response = requests.get(url)
     holiday_info_list = response.json()["days"]
     holiday_info_list_cache.append(holiday_info_list)
