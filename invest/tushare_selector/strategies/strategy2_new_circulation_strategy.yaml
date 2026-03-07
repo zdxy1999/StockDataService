@@ -1,0 +1,44 @@
+# 策略2：次新股流通策略
+# 描述：筛选流通市值较小、净资产收益率较高的次新股
+
+# 策略名称
+strategy_name: "次新股流通策略"
+
+# 筛选条件
+filters:
+  # 排除ST股票
+  - field: "exclude_st"
+    operator: "eq"
+    value: true
+
+  # 流通市值 < 10亿
+  - field: "circulation_market_cap"
+    operator: "lt"
+    value: 10
+
+  # 净资产收益率 > 10%
+  - field: "roe"
+    operator: "gt"
+    value: 0.10
+
+  # 收盘价 > 0
+  - field: "close"
+    operator: "gt"
+    value: 0
+
+  # 收盘价 < 20
+  - field: "close"
+    operator: "lt"
+    value: 20
+
+  # 未来20日新增流通股占比 < 10%
+  - field: "future_20day_new_share_ratio"
+    operator: "lt"
+    value: 0.10
+
+# 排名规则
+ranking:
+  # 按流通市值从小到大排名
+  - field: "circulation_market_cap"
+    order: "asc"  # asc-升序, desc-降序
+    weight: 1.0

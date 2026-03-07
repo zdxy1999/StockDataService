@@ -9,6 +9,7 @@ from static.service.data_service import get_trade_day_info, get_special_stocks_o
     get_main_index_info_for_today
 from static.service.evaluation_service import get_all_main_index_pe_pb_position
 from static.service.single_stock_service import get_stock_real_time_info, list_all_stock
+from invest.invest_service import get_invest_plan as _get_invest_plan
 
 app = Flask(__name__)
 
@@ -111,6 +112,22 @@ def get_stock_info():
     result = get_stock_real_time_info(date_str, code)
     return json.dumps(result.__dict__, indent=2, ensure_ascii=False)
 
+
+@app.route('/investPlan')
+def get_invest_plan_route():
+    """查询投资计划调仓结果
+
+    Query Params:
+        plan_name: 投资计划名称，不传则返回所有计划
+        date:      调仓日期 YYYYMMDD，不传则自动推断最新调仓日
+    """
+    plan_name = request.args.get('plan_name')
+    date = request.args.get('date')
+    result = _get_invest_plan(
+        plan_name=plan_name if plan_name else None,
+        date=date if date else None,
+    )
+    return json.dumps(result, indent=2, ensure_ascii=False)
 
 
 if __name__ == '__main__':

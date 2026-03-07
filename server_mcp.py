@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from static.service.evaluation_service import get_all_main_index_pe_pb_position
 from static.service.single_stock_service import get_stock_real_time_info, list_all_stock
+from invest.invest_service import get_invest_plan as _get_invest_plan
 
 mcp = FastMCP("stock-data", port=7070, host='0.0.0.0')
 
@@ -148,6 +149,30 @@ def get_stock_info(date_str: str, code: str):
         code: 对应的个股代码(ts_code)
     """
     return get_stock_real_time_info(date_str, code)
+
+
+@mcp.tool()
+def get_invest_plan(plan_name: str = None, date: str = None):
+    """查询投资计划调仓结果
+
+    返回指定投资计划在指定日期的调仓建议，包括需要买入、卖出和继续持有的股票列表。
+
+    Args:
+        plan_name: 投资计划名称（如"最小流通市值策略计划"）；不传则返回所有计划
+        date:      调仓日期，格式 YYYYMMDD（如"20260306"）；不传则自动推断最新调仓日。
+                   注意：若传入非交易日日期，将直接返回错误。
+
+    Returns:
+        dict，包含：
+        - status: "ok" / "computing" / "error" / "partial"
+        - results: 各计划的调仓结果列表，每项包含 plan_name, date, prev_date, buy, sell, hold
+        - message: 错误或提示信息（仅在 status 非 ok 时存在）
+    """
+    result = _get_invest_plan(
+        plan_name=plan_name if plan_name else None,
+        date=date if date else None,
+    )
+    return json.dumps(result, indent=2, ensure_ascii=False)
 
 
 if __name__ == '__main__':
