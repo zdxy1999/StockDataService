@@ -1,7 +1,12 @@
 # 使用官方 Python 运行时作为基础镜像
 # FROM docker.m.daocloud.io/python:3.12-slim
-FROM docker.m.daocloud.io/python:3.12-slim
+#FROM docker.m.daocloud.io/python:3.12-slim
+#FROM docker.xuanyuan.me/python:3.12-slim
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/python:3.12-slim
 
+# 设置时区为上海（python:3.12-slim 已内置 zoneinfo，无需安装 tzdata）
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
 
 # 设置工作目录
 WORKDIR /app
@@ -17,7 +22,9 @@ COPY . .
 
 # 确保启动脚本有可执行权限，并创建统一数据目录（可通过 -v 挂载覆盖）
 RUN chmod +x start_servers.sh && \
-    mkdir -p /app/data/cache /app/data/selector_output /app/data/invest_output /app/data/logs
+    mkdir -p /app/data/cache /app/data/selector_output /app/data/invest_output /app/data/logs && \
+    cp -r /app/invest/invest_plan/plans /app/_builtin_plans && \
+    cp -r /app/invest/tushare_selector/strategies /app/_builtin_strategies
 
 # 暴露端口
 EXPOSE 9090 7070

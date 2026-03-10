@@ -85,11 +85,17 @@ docker run -d \
   --name stock-data-service \
   -p 9090:9090 \
   -p 7070:7070 \
-  -v /host/path/data:/app/data \
+  -v /data/stock-data-service:/app/data \
+  -v /data/stock-data-service_plans:/app/invest/invest_plan/plans \
+  -v /data/stock-data-service_strategies:/app/invest/tushare_selector/strategies \
+  -e DATA_ROOT=/app/data \
   -e DAILY_CRON="30 19 * * 1-5" \
   --restart=always \
-  docker.io/library/stock-data-service:x86_v2.0.0
+  stock-data-service:1.1.3-amd64
 ```
+
+> 若无需挂载外部 YAML，可省略 `PLANS_DIR`/`STRATEGIES_DIR` 相关参数，容器默认使用内置计划与策略。  
+> 容器时区已默认设置为 `Asia/Shanghai`（上海），无需额外配置。
 
 ---
 
