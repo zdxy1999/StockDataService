@@ -11,6 +11,11 @@ filters:
     operator: "eq"
     value: true
 
+  # 股价 >= 1元
+  - field: "close"
+    operator: "gte"
+    value: 1
+
   # 流通市值 < 10亿
   - field: "circulation_market_cap"
     operator: "lt"
@@ -20,11 +25,6 @@ filters:
   - field: "roe"
     operator: "gt"
     value: 0.10
-
-  # 收盘价 > 0
-  - field: "close"
-    operator: "gt"
-    value: 0
 
   # 收盘价 < 20
   - field: "close"

@@ -18,6 +18,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 将 StockDataService 代码复制到 /app
+# 先复制 VERSION 文件，这样可以用于构建时的版本标记
+COPY VERSION /app/VERSION
 COPY . .
 
 # 确保启动脚本有可执行权限，并创建统一数据目录（可通过 -v 挂载覆盖）

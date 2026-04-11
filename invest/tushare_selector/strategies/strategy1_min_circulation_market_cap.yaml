@@ -11,6 +11,11 @@ filters:
     operator: "eq"
     value: true
 
+  # 股价 >= 1元
+  - field: "close"
+    operator: "gte"
+    value: 1
+
   # 股价振幅 > 0.5%
   - field: "price_amplitude"
     operator: "gt"

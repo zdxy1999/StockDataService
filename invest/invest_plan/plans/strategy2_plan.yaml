@@ -2,4 +2,4 @@ plan_name: 次新股流通策略计划
 strategy: ../../tushare_selector/strategies/strategy2_new_circulation_strategy.yaml
 first_plan_day: "20260302"
 interval: 2        # 每2个交易日调仓一次（0=每日调仓）
-top: 3            # 取选股结果前3名
+top: 6            # 取选股结果前3名

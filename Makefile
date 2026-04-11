@@ -1,5 +1,5 @@
 IMAGE_NAME  := stock-data-service
-VERSION     ?= latest
+VERSION     ?= $(shell cat VERSION 2>/dev/null || echo "latest")
 DIST_DIR    := dist
 
 AMD64_TAR   := $(DIST_DIR)/$(IMAGE_NAME)_amd64_$(VERSION).tar
