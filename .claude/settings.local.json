@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh:*)",
+      "Read(//Users/dichang/.ssh/**)",
+      "Bash(chmod 600 ~/.ssh/zdxy.pem)",
+      "Bash(curl -v http://47.99.207.160:9090/health)",
+      "Bash(curl -s http://47.99.207.160:9090/)",
+      "Bash(curl -s \"http://47.99.207.160:9090/tradeDayBasic?date=2026-04-28\")",
+      "Bash(curl -s http://47.99.207.160:7070)",
+      "Bash(ls:*)",
+      "Bash(curl -s -m 5 \"http://47.99.207.160:9090/\")",
+      "Bash(curl -s -m 10 \"http://47.99.207.160:9090/mainIndexPosition\")",
+      "Bash(make build-amd64:*)",
+      "Bash(docker version:*)",
+      "Bash(scp:*)",
+      "Bash(curl -s \"http://47.99.207.160:9090/specialStocks?date=2026-04-28\")",
+      "Bash(curl -s \"http://47.99.207.160:9090/lastDayMoneyFlow?date=2026-04-28\")",
+      "Bash(ssh -i ~/.ssh/zdxy-ali.pem root@47.99.207.160 \"docker ps | grep stock-data && echo ''---'' && docker logs stock-data-service --tail 10\")",
+      "Bash(curl -s \"http://47.99.207.160:9090/news?date=2026-04-28\")",
+      "Bash(curl -s \"http://47.99.207.160:9090/mainIndexPosition\")",
+      "Bash(pip list:*)",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(curl -s \"http://47.99.207.160:9090/tradeDayBasic?date=2026-05-04\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"http://47.99.207.160:9090/tradeDayBasic?date=2026-04-29\")",
+      "Bash(docker build:*)",
+      "Bash(mkdir -p dist)",
+      "Bash(docker save:*)",
+      "Bash(git mv:*)",
+      "Bash(python3:*)",
+      "Bash(git add:*)",
+      "Bash(chmod +x skills/deploy/deploy.sh)",
+      "Bash(find . -name *skill* -type f)",
+      "Bash(./skills/deploy/scripts/deploy.sh)",
+      "Bash(curl -s http://47.99.207.160:9090/tradeDayBasic)",
+      "Bash(curl -s \"http://47.99.207.160:9090/stock/info?code=000001.SZ\")",
+      "Bash(curl -s http://47.99.207.160:9090/investPlan)"
+    ]
+  }
+}

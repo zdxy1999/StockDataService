@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from static.repo.baostock_adapter import get_trade_date
+from static.repo.trade_date_adapter import get_trade_date
 from static.repo.holidays_adapter import HolidayInfo, get_upcoming_holiday_info, is_reschedule_working_day
 from static.repo.tushare_adapter import DfWithColumnDesc, get_ipo_stocks_of_a_day, get_suspend_stocks_of_a_day, \
     get_resume_stocks_of_a_day, get_mkt_dc_money_flow, get_ind_money_flow, get_money_flow_hsgt, \

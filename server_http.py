@@ -110,7 +110,7 @@ def get_stock_info():
         date_str = date
 
     result = get_stock_real_time_info(date_str, code)
-    return json.dumps(result.__dict__, indent=2, ensure_ascii=False)
+    return json.dumps(result, indent=2, ensure_ascii=False)
 
 
 @app.route('/investPlan')
